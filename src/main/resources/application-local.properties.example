@@ -1,0 +1,19 @@
+# Copy this file to application-local.properties and fill in your own values.
+#
+#   cp application-local.properties.example application-local.properties
+#
+# application-local.properties is listed in .gitignore, so your real credentials never get
+# committed. Run with this profile active:
+#
+#   mvn spring-boot:run -Dspring-boot.run.profiles=local
+#
+# Values here override the defaults in application.properties.
+
+spring.datasource.username=postgres
+spring.datasource.password=CHANGE_ME
+
+# At least 32 characters. Generate a throwaway one and keep it out of Git.
+app.jwt.secret=CHANGE_ME_to_a_long_random_string_at_least_32_chars
+
+app.admin.email=admin@obs.com
+app.admin.password=CHANGE_ME

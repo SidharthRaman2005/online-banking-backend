@@ -1,0 +1,531 @@
+{
+  "info": {
+    "name": "Online Banking System",
+    "description": "Full API collection. Run the folders top to bottom: Auth captures {{token}} automatically, and Setup Receiver captures {{receiverAccount}} and {{receiverUpi}} for the transfer requests. Failure cases are grouped at the bottom and are expected to fail.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "token", "value": "" },
+    { "key": "adminToken", "value": "" },
+    { "key": "receiverAccount", "value": "" },
+    { "key": "receiverUpi", "value": "" },
+    { "key": "reference", "value": "" },
+    { "key": "userId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "1. Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.collectionVariables.set('runId', Date.now().toString().slice(-6));"
+              ]}
+            },
+            {
+              "listen": "test",
+              "script": { "type": "text/javascript", "exec": [
+                "pm.test('201 Created', () => pm.response.to.have.status(201));",
+                "const d = pm.response.json().data;",
+                "pm.test('account number is 10 digits', () => pm.expect(d.accountNumber).to.match(/^[1-9]\\d{9}$/));",
+                "pm.test('upi id is issued', () => pm.expect(d.upiId).to.include('@obs'));",
+                "pm.test('opening balance is in range', () => { pm.expect(Number(d.balance)).to.be.at.least(100000); pm.expect(Number(d.balance)).to.be.at.most(9900000); });",
+                "pm.test('no password in response', () => pm.expect(pm.response.text()).to.not.include('password'));",
+                "pm.collectionVariables.set('email', d.email);",
+                "pm.collectionVariables.set('userId', d.userId);"
+              ]}
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo{{runId}}\",\n  \"email\": \"demo{{runId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "const d = pm.response.json().data;",
+              "pm.test('token returned', () => pm.expect(d.token).to.be.a('string'));",
+              "pm.collectionVariables.set('token', d.token);"
+            ]}}
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"Secret123\"\n}" }
+          }
+        },
+        {
+          "name": "Login as admin",
+          "event": [
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('200 OK', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('adminToken', pm.response.json().data.token);"
+            ]}}
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@obs.com\",\n  \"password\": \"Admin@123\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. User",
+      "item": [
+        {
+          "name": "Dashboard",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "const d = pm.response.json().data;",
+            "pm.test('has account details', () => { pm.expect(d.accountNumber).to.be.a('string'); pm.expect(d.upiId).to.include('@obs'); });"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/dashboard"
+          }
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/user/profile"
+          }
+        },
+        {
+          "name": "Update profile",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('upi id unchanged by rename', () => pm.expect(pm.response.json().data.upiId).to.include('@obs'));"
+          ]}}],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/user/profile",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"renamed{{runId}}\"\n}" }
+          }
+        },
+        {
+          "name": "Change password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/user/change-password",
+            "body": { "mode": "raw", "raw": "{\n  \"currentPassword\": \"Secret123\",\n  \"newPassword\": \"Secret456\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Deposit & Withdraw",
+      "item": [
+        {
+          "name": "Deposit",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "const d = pm.response.json().data;",
+            "pm.test('credit direction', () => pm.expect(d.direction).to.eql('CREDIT'));",
+            "pm.collectionVariables.set('reference', d.transactionReference);"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/deposit",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 10000.00,\n  \"description\": \"Salary\"\n}" }
+          }
+        },
+        {
+          "name": "Withdraw",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('debit direction', () => pm.expect(pm.response.json().data.direction).to.eql('DEBIT'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/withdraw",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 2500.50\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Transfer",
+      "item": [
+        {
+          "name": "Setup receiver",
+          "event": [
+            { "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+              "pm.collectionVariables.set('rxId', Date.now().toString().slice(-6));"
+            ]}},
+            { "listen": "test", "script": { "type": "text/javascript", "exec": [
+              "pm.test('201 Created', () => pm.response.to.have.status(201));",
+              "const d = pm.response.json().data;",
+              "pm.collectionVariables.set('receiverAccount', d.accountNumber);",
+              "pm.collectionVariables.set('receiverUpi', d.upiId);"
+            ]}}
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"payee{{rxId}}\",\n  \"email\": \"payee{{rxId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+          }
+        },
+        {
+          "name": "Resolve UPI payee",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('no account number leaked', () => pm.expect(pm.response.text()).to.not.include('accountNumber'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/upi/resolve?upiId={{receiverUpi}}"
+          }
+        },
+        {
+          "name": "Transfer by account number",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('201 Created', () => pm.response.to.have.status(201));",
+            "pm.test('counterparty resolved', () => pm.expect(pm.response.json().data.counterpartyName).to.be.a('string'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/transfer",
+            "body": { "mode": "raw", "raw": "{\n  \"receiverAccountNumber\": \"{{receiverAccount}}\",\n  \"amount\": 5000.00,\n  \"description\": \"Rent\"\n}" }
+          }
+        },
+        {
+          "name": "Transfer by UPI ID",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/transfer",
+            "body": { "mode": "raw", "raw": "{\n  \"receiverUpiId\": \"{{receiverUpi}}\",\n  \"amount\": 1200.00\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. History & UPI",
+      "item": [
+        {
+          "name": "All transactions",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('200 OK', () => pm.response.to.have.status(200));",
+            "pm.test('paginated', () => pm.expect(pm.response.json().data).to.have.property('totalPages'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/transactions?type=ALL&page=0&size=10"
+          }
+        },
+        {
+          "name": "Filter deposits",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/transactions?type=DEPOSIT"
+          }
+        },
+        {
+          "name": "One transaction by reference",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/transactions/{{reference}}"
+          }
+        },
+        {
+          "name": "My UPI ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/upi/me"
+          }
+        },
+        {
+          "name": "Notifications",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/notifications"
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Admin",
+      "item": [
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/stats"
+          }
+        },
+        {
+          "name": "Users",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/users?page=0&size=10"
+          }
+        },
+        {
+          "name": "Accounts",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/accounts?page=0&size=10"
+          }
+        },
+        {
+          "name": "All transactions",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": "{{baseUrl}}/api/admin/transactions?type=ALL&status=ALL"
+          }
+        },
+        {
+          "name": "Deactivate user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"DEACTIVATED\"\n}" }
+          }
+        },
+        {
+          "name": "Reactivate user",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/admin/users/{{userId}}/status",
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"ACTIVE\"\n}" }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Failure cases (all expected to fail)",
+      "item": [
+        {
+          "name": "Duplicate email -> 409",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('409 Conflict', () => pm.response.to.have.status(409));",
+            "pm.test('DUPLICATE_RESOURCE', () => pm.expect(pm.response.json().errorCode).to.eql('DUPLICATE_RESOURCE'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"other{{runId}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Secret123\"\n}" }
+          }
+        },
+        {
+          "name": "Weak password -> 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('field error present', () => pm.expect(pm.response.json().errors).to.have.property('password'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/register",
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"weakling\",\n  \"email\": \"weak{{runId}}@mail.com\",\n  \"password\": \"abc\"\n}" }
+          }
+        },
+        {
+          "name": "Wrong password -> 401",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+            "pm.test('generic message', () => pm.expect(pm.response.json().message).to.eql('Invalid email or password'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"TotallyWrong1\"\n}" }
+          }
+        },
+        {
+          "name": "Unknown email -> 401 (same message)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));",
+            "pm.test('message identical to wrong-password case', () => pm.expect(pm.response.json().message).to.eql('Invalid email or password'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/auth/login",
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"nobody-here@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+          }
+        },
+        {
+          "name": "No token -> 401",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": { "method": "GET", "url": "{{baseUrl}}/api/user/dashboard" }
+        },
+        {
+          "name": "Tampered token -> 401",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('401 Unauthorized', () => pm.response.to.have.status(401));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer not.a.real.token" }],
+            "url": "{{baseUrl}}/api/user/dashboard"
+          }
+        },
+        {
+          "name": "Zero amount -> 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/deposit",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 0\n}" }
+          }
+        },
+        {
+          "name": "Negative amount -> 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/deposit",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": -500\n}" }
+          }
+        },
+        {
+          "name": "Insufficient balance -> 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));",
+            "pm.test('INSUFFICIENT_BALANCE', () => pm.expect(pm.response.json().errorCode).to.eql('INSUFFICIENT_BALANCE'));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/withdraw",
+            "body": { "mode": "raw", "raw": "{\n  \"amount\": 99999999.00\n}" }
+          }
+        },
+        {
+          "name": "Invalid account number -> 404",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/transfer",
+            "body": { "mode": "raw", "raw": "{\n  \"receiverAccountNumber\": \"9999999999\",\n  \"amount\": 100.00\n}" }
+          }
+        },
+        {
+          "name": "Invalid UPI ID -> 404",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('404 Not Found', () => pm.response.to.have.status(404));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/transfer",
+            "body": { "mode": "raw", "raw": "{\n  \"receiverUpiId\": \"ghost@obs\",\n  \"amount\": 100.00\n}" }
+          }
+        },
+        {
+          "name": "Both receiver fields -> 400",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('400 Bad Request', () => pm.response.to.have.status(400));"
+          ]}}],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "url": "{{baseUrl}}/api/transactions/transfer",
+            "body": { "mode": "raw", "raw": "{\n  \"receiverAccountNumber\": \"{{receiverAccount}}\",\n  \"receiverUpiId\": \"{{receiverUpi}}\",\n  \"amount\": 100.00\n}" }
+          }
+        },
+        {
+          "name": "Admin API as normal user -> 403",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('403 Forbidden', () => pm.response.to.have.status(403));",
+            "pm.test('FORBIDDEN', () => pm.expect(pm.response.json().errorCode).to.eql('FORBIDDEN'));"
+          ]}}],
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/api/admin/stats"
+          }
+        }
+      ]
+    }
+  ]
+}
