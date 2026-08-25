@@ -19,9 +19,6 @@ public class AdminUserResponse {
     private final String email;
     private final Role role;
     private final AccountStatus status;
-    private final String accountNumber;
-    private final String upiId;
-    private final BigDecimal balance;
     private final Instant createdAt;
 
     public static AdminUserResponse from(User user, BankAccount account) {
@@ -31,9 +28,6 @@ public class AdminUserResponse {
                 .email(user.getEmail())
                 .role(user.getRole())
                 .status(user.getStatus())
-                .accountNumber(account == null ? null : account.getAccountNumber())
-                .upiId(account == null ? null : account.getUpiId())
-                .balance(account == null ? null : account.getBalance())
                 .createdAt(user.getCreatedAt())
                 .build();
     }

@@ -1,7 +1,11 @@
 package com.bank.online_banking_system;
 
 import com.bank.online_banking_system.entity.BankAccount;
+import com.bank.online_banking_system.entity.User;
+import com.bank.online_banking_system.enums.AccountStatus;
 import com.bank.online_banking_system.repository.BankAccountRepository;
+import com.bank.online_banking_system.repository.NotificationRepository;
+import com.bank.online_banking_system.repository.UserRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
@@ -36,6 +40,12 @@ class AuthModuleTest {
 
     @Autowired
     private BankAccountRepository bankAccountRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private NotificationRepository notificationRepository;
 
     private String registerBody(String username, String email, String password) {
         return """
@@ -145,6 +155,35 @@ class AuthModuleTest {
 
         mockMvc.perform(get("/api/user/dashboard").header("Authorization", "Bearer not.a.real.token"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void deactivatedUserCanSubmitReactivationRequestWithoutJwt() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody("reactivate", "reactivate@mail.com", "Secret123")))
+                .andExpect(status().isCreated());
+
+        User user = userRepository.findByEmail("reactivate@mail.com").orElseThrow();
+        user.setStatus(AccountStatus.DEACTIVATED);
+        userRepository.save(user);
+
+        mockMvc.perform(post("/api/activation-requests")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "email": "reactivate@mail.com",
+                                  "password": "Secret123",
+                                  "message": "My account was deactivated by mistake. Please reactivate it."
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.message").value("My account was deactivated by mistake. Please reactivate it."));
+
+        User admin = userRepository.findByEmail("admin@obs.com").orElseThrow();
+        assertThat(notificationRepository.findTop50ByUserIdOrderByCreatedAtDescIdDesc(admin.getId()))
+                .anySatisfy(notification -> assertThat(notification.getMessage())
+                        .contains("New activation request from reactivate"));
     }
 
     @Test
