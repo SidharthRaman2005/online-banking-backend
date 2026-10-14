@@ -2,6 +2,7 @@ package com.bank.online_banking_system.controller;
 
 import com.bank.online_banking_system.dto.request.LoginRequest;
 import com.bank.online_banking_system.dto.request.RegisterRequest;
+import com.bank.online_banking_system.dto.request.ResetPasswordRequest;
 import com.bank.online_banking_system.dto.response.ApiResponse;
 import com.bank.online_banking_system.dto.response.AuthResponse;
 import com.bank.online_banking_system.dto.response.RegisterResponse;
@@ -36,5 +37,13 @@ public class AuthController {
     @Operation(summary = "Log in and receive a JWT")
     public ResponseEntity<ApiResponse<AuthResponse>> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(ApiResponse.of("Login successful", authService.login(request)));
+    }
+
+    @PostMapping("/reset-password")
+    @Operation(summary = "Reset a user's password")
+    public ResponseEntity<ApiResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok(ApiResponse.message("Password reset successfully"));
     }
 }

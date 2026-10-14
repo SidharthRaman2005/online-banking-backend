@@ -2,6 +2,7 @@ package com.bank.online_banking_system.service;
 
 import com.bank.online_banking_system.dto.request.LoginRequest;
 import com.bank.online_banking_system.dto.request.RegisterRequest;
+import com.bank.online_banking_system.dto.request.ResetPasswordRequest;
 import com.bank.online_banking_system.dto.response.AuthResponse;
 import com.bank.online_banking_system.dto.response.RegisterResponse;
 import com.bank.online_banking_system.dto.response.UserSummaryResponse;
@@ -101,5 +102,16 @@ public class AuthService {
                 .expiresIn(jwtService.getExpirationSeconds())
                 .user(UserSummaryResponse.from(user))
                 .build();
+    }
+
+    @Transactional
+    public void resetPassword(ResetPasswordRequest request) {
+        String email = request.getEmail().trim().toLowerCase();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new InvalidCredentialsException("No account found for that email"));
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+        log.info("Password reset for user id={}", user.getId());
     }
 }

@@ -192,7 +192,7 @@ and run the folders top to bottom — `{{token}}` is captured automatically afte
 
 | Area | Endpoints |
 |---|---|
-| Auth | `POST /api/auth/register`, `POST /api/auth/login` |
+| Auth | `POST /api/auth/register`, `POST /api/auth/login`, `POST /api/auth/reset-password` |
 | User | `GET /api/user/dashboard`, `GET|PUT /api/user/profile`, `PUT /api/user/change-password` |
 | Money | `POST /api/transactions/{deposit,withdraw,transfer}` |
 | History | `GET /api/transactions`, `GET /api/transactions/{reference}` |
