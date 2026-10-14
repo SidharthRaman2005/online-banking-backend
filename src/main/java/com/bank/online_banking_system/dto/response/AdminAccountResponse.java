@@ -13,6 +13,7 @@ import java.time.Instant;
 public class AdminAccountResponse {
 
     private final Long id;
+    private final Long userId;
     private final String accountNumber;
     private final String upiId;
     private final BigDecimal balance;
@@ -24,6 +25,7 @@ public class AdminAccountResponse {
     public static AdminAccountResponse from(BankAccount account) {
         return AdminAccountResponse.builder()
                 .id(account.getId())
+                .userId(account.getUser().getId())
                 .accountNumber(account.getAccountNumber())
                 .upiId(account.getUpiId())
                 .balance(account.getBalance())

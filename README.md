@@ -142,6 +142,7 @@ when something outside the project needs the variables too.
 ## 3. Run
 
 ```bash
+cd "C:\Users\sidha\OneDrive\Desktop\SAA2 PROJECT\backend"
 mvn spring-boot:run "-Dspring-boot.run.profiles=local"
 ```
 
