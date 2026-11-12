@@ -44,7 +44,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo{{runId}}\",\n  \"email\": \"demo{{runId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo{{runId}}\",\n  \"email\": \"demo{{runId}}@mail.com\",\n  \"password\": \"Secret123\",\n  \"initialDeposit\": 500.00\n}" }
           }
         },
         {
@@ -194,7 +194,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"payee{{rxId}}\",\n  \"email\": \"payee{{rxId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"payee{{rxId}}\",\n  \"email\": \"payee{{rxId}}@mail.com\",\n  \"password\": \"Secret123\",\n  \"initialDeposit\": 500.00\n}" }
           }
         },
         {
@@ -362,7 +362,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"other{{runId}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Secret123\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"other{{runId}}\",\n  \"email\": \"{{email}}\",\n  \"password\": \"Secret123\",\n  \"initialDeposit\": 500.00\n}" }
           }
         },
         {
@@ -375,7 +375,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"weakling\",\n  \"email\": \"weak{{runId}}@mail.com\",\n  \"password\": \"abc\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"weakling\",\n  \"email\": \"weak{{runId}}@mail.com\",\n  \"password\": \"abc\",\n  \"initialDeposit\": 500.00\n}" }
           }
         },
         {

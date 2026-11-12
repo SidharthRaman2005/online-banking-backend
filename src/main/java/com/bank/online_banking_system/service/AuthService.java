@@ -13,17 +13,20 @@ import com.bank.online_banking_system.enums.Role;
 import com.bank.online_banking_system.exception.AccountDeactivatedException;
 import com.bank.online_banking_system.exception.DuplicateResourceException;
 import com.bank.online_banking_system.exception.InvalidCredentialsException;
+import com.bank.online_banking_system.exception.InvalidTransactionException;
 import com.bank.online_banking_system.repository.BankAccountRepository;
 import com.bank.online_banking_system.repository.UserRepository;
 import com.bank.online_banking_system.security.JwtService;
 import com.bank.online_banking_system.util.AccountNumberGenerator;
-import com.bank.online_banking_system.util.InitialBalanceGenerator;
 import com.bank.online_banking_system.util.UpiIdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Slf4j
 @Service
@@ -36,7 +39,6 @@ public class AuthService {
     private final JwtService jwtService;
     private final AccountNumberGenerator accountNumberGenerator;
     private final UpiIdGenerator upiIdGenerator;
-    private final InitialBalanceGenerator initialBalanceGenerator;
 
     /**
      * Creates the user and their bank account in one database transaction, so a failure part-way
@@ -54,6 +56,14 @@ public class AuthService {
             throw new DuplicateResourceException("An account with that email already exists");
         }
 
+        BigDecimal initialDeposit = request.getInitialDeposit() != null
+                ? request.getInitialDeposit().setScale(2, RoundingMode.HALF_UP)
+                : BigDecimal.valueOf(500).setScale(2, RoundingMode.HALF_UP);
+
+        if (initialDeposit.compareTo(BigDecimal.valueOf(500)) < 0) {
+            throw new InvalidTransactionException("Minimum deposit of 500 rupees is required to open an account");
+        }
+
         User user = User.builder()
                 .username(username)
                 .email(email)
@@ -66,7 +76,7 @@ public class AuthService {
         BankAccount account = BankAccount.builder()
                 .accountNumber(accountNumberGenerator.generate())
                 .upiId(upiIdGenerator.generate(username))
-                .balance(initialBalanceGenerator.generate())
+                .balance(initialDeposit)
                 .status(AccountStatus.ACTIVE)
                 .user(user)
                 .build();

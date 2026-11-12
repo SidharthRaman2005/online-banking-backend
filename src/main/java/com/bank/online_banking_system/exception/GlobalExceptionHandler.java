@@ -3,6 +3,7 @@ package com.bank.online_banking_system.exception;
 import com.bank.online_banking_system.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,6 +24,14 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleApiException(ApiException ex, HttpServletRequest request) {
         log.warn("{} at {}: {}", ex.getErrorCode(), request.getRequestURI(), ex.getMessage());
         return build(ex.getStatus(), ex.getMessage(), ex.getErrorCode(), null, request);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex,
+                                                            HttpServletRequest request) {
+        log.warn("Data integrity violation at {}: {}", request.getRequestURI(), ex.getMessage());
+        return build(HttpStatus.CONFLICT, "A user with that username or email already exists",
+                "DUPLICATE_RESOURCE", null, request);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

@@ -48,9 +48,18 @@ class AuthModuleTest {
     private NotificationRepository notificationRepository;
 
     private String registerBody(String username, String email, String password) {
+        return registerBody(username, email, password, new BigDecimal("500.00"));
+    }
+
+    private String registerBody(String username, String email, String password, BigDecimal initialDeposit) {
+        if (initialDeposit == null) {
+            return """
+                    {"username":"%s","email":"%s","password":"%s"}
+                    """.formatted(username, email, password);
+        }
         return """
-                {"username":"%s","email":"%s","password":"%s"}
-                """.formatted(username, email, password);
+                {"username":"%s","email":"%s","password":"%s","initialDeposit":%s}
+                """.formatted(username, email, password, initialDeposit.toPlainString());
     }
 
     private String loginBody(String email, String password) {
@@ -74,8 +83,37 @@ class AuthModuleTest {
 
         assertThat(data.get("accountNumber").asText()).matches("[1-9]\\d{9}");
         assertThat(new BigDecimal(data.get("balance").asText()))
-                .isBetween(new BigDecimal("100000"), new BigDecimal("9900000"));
+                .isEqualByComparingTo(new BigDecimal("500.00"));
         assertThat(data.has("password")).isFalse();
+    }
+
+    @Test
+    void registerRequiresMinimumDepositOf500() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody("lowdeposit", "low@mail.com", "Secret123", new BigDecimal("499.00"))))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.initialDeposit").exists());
+    }
+
+    @Test
+    void registerWithoutDepositIsRejected() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody("nodeposit", "none@mail.com", "Secret123", null)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errorCode").value("VALIDATION_ERROR"))
+                .andExpect(jsonPath("$.errors.initialDeposit").exists());
+    }
+
+    @Test
+    void registerWithCustomDepositAboveMinimumSetsBalance() throws Exception {
+        MvcResult result = mockMvc.perform(post("/api/auth/register")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(registerBody("richuser", "rich@mail.com", "Secret123", new BigDecimal("1500.00"))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.balance").value(1500.00))
+                .andReturn();
     }
 
     @Test
@@ -124,6 +162,19 @@ class AuthModuleTest {
         BankAccount after = bankAccountRepository.findByUpiId("rahul@obs").orElseThrow();
         assertThat(after.getAccountNumber()).isEqualTo(accountNumber);
         assertThat(after.getBalance()).isEqualByComparingTo(balance);
+    }
+
+    @Test
+    void loginWithEmailSucceeds() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                .content(registerBody("identemailuser", "identemail@mail.com", "Secret123")))
+                .andExpect(status().isCreated());
+
+        mockMvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)
+                        .content(loginBody("identemail@mail.com", "Secret123")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.token").isString())
+                .andExpect(jsonPath("$.data.user.email").value("identemail@mail.com"));
     }
 
     @Test

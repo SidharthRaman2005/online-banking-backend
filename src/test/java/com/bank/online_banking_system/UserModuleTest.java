@@ -39,7 +39,7 @@ class UserModuleTest {
     private String tokenFor(String username, String email, String password) throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"%s","email":"%s","password":"%s"}
+                                {"username":"%s","email":"%s","password":"%s","initialDeposit":500.00}
                                 """.formatted(username, email, password)))
                 .andExpect(status().isCreated());
         return login(email, password);
