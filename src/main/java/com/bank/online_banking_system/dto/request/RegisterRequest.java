@@ -37,4 +37,6 @@ public class RegisterRequest {
     @DecimalMin(value = "500.00", message = "Opening deposit must be at least ₹500")
     @Digits(integer = 17, fraction = 2, message = "Opening deposit may have at most 2 decimal places")
     private BigDecimal openingDeposit;
+
+    private String googleIdToken;
 }

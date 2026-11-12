@@ -13,6 +13,7 @@ import com.bank.online_banking_system.enums.Role;
 import com.bank.online_banking_system.enums.TransactionType;
 import com.bank.online_banking_system.exception.AccountDeactivatedException;
 import com.bank.online_banking_system.exception.DuplicateResourceException;
+import com.bank.online_banking_system.exception.GoogleVerificationException;
 import com.bank.online_banking_system.exception.InvalidCredentialsException;
 import com.bank.online_banking_system.repository.BankAccountRepository;
 import com.bank.online_banking_system.repository.UserRepository;
@@ -41,6 +42,7 @@ public class AuthService {
     private final UpiIdGenerator upiIdGenerator;
     private final TransactionService transactionService;
     private final ReferenceGenerator referenceGenerator;
+    private final GoogleVerificationService googleVerificationService;
 
     private static final BigDecimal OPENING_BALANCE = new BigDecimal("500.00");
 
@@ -52,6 +54,11 @@ public class AuthService {
     public RegisterResponse register(RegisterRequest request) {
         String username = request.getUsername().trim();
         String email = request.getEmail().trim().toLowerCase();
+        String verifiedGoogleEmail = googleVerificationService.verifyEmail(request.getGoogleIdToken());
+        if (verifiedGoogleEmail != null && !verifiedGoogleEmail.equals(email)) {
+            throw new GoogleVerificationException(
+                    "The signup email must match the verified Google email");
+        }
 
         if (userRepository.existsByUsername(username)) {
             throw new DuplicateResourceException("That username is already taken");

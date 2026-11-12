@@ -3,9 +3,12 @@ package com.bank.online_banking_system.controller;
 import com.bank.online_banking_system.dto.request.LoginRequest;
 import com.bank.online_banking_system.dto.request.RegisterRequest;
 import com.bank.online_banking_system.dto.request.ResetPasswordRequest;
+import com.bank.online_banking_system.dto.request.GoogleVerificationRequest;
 import com.bank.online_banking_system.dto.response.ApiResponse;
 import com.bank.online_banking_system.dto.response.AuthResponse;
 import com.bank.online_banking_system.dto.response.RegisterResponse;
+import com.bank.online_banking_system.dto.response.GoogleVerificationResponse;
+import com.bank.online_banking_system.service.GoogleVerificationService;
 import com.bank.online_banking_system.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
@@ -24,6 +27,16 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final GoogleVerificationService googleVerificationService;
+
+    @PostMapping("/google/verify")
+    @Operation(summary = "Verify a Google email for signup")
+    public ResponseEntity<ApiResponse<GoogleVerificationResponse>> verifyGoogle(
+            @Valid @RequestBody GoogleVerificationRequest request) {
+        String email = googleVerificationService.verifyEmail(request.getCredential());
+        return ResponseEntity.ok(ApiResponse.of("Google email verified",
+                new GoogleVerificationResponse(email)));
+    }
 
     @PostMapping("/register")
     @Operation(summary = "Register a user and open their bank account")

@@ -14,6 +14,8 @@ spring.datasource.password=CHANGE_ME
 
 # At least 32 characters. Generate a throwaway one and keep it out of Git.
 app.jwt.secret=CHANGE_ME_to_a_long_random_string_at_least_32_chars
+app.google.signup-verification.enabled=true
+app.google.client-id=YOUR_GOOGLE_WEB_CLIENT_ID
 
 app.admin.email=admin@obs.com
 app.admin.password=CHANGE_ME

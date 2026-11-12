@@ -137,6 +137,13 @@ DB_PASSWORD=your-postgres-password;JWT_SECRET=a-long-random-string-of-at-least-3
 Use **Option A** for day-to-day work and Option D if you run from the IDE. Reach for B or C only
 when something outside the project needs the variables too.
 
+### Google signup email verification
+
+Signup requires a verified Google email when `GOOGLE_SIGNUP_VERIFICATION_ENABLED=true`. Create a
+Google OAuth web client and set its client ID in both `GOOGLE_CLIENT_ID` (backend) and
+`VITE_GOOGLE_CLIENT_ID` (frontend). The Google ID token is re-verified by the backend during
+registration; the application never trusts an email supplied only by the browser.
+
 ---
 
 ## 3. Run
