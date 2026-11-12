@@ -39,7 +39,7 @@ class UserModuleTest {
     private String tokenFor(String username, String email, String password) throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"%s","email":"%s","password":"%s"}
+                                {"username":"%s","email":"%s","password":"%s","openingDeposit":500}
                                 """.formatted(username, email, password)))
                 .andExpect(status().isCreated());
         return login(email, password);
@@ -66,9 +66,9 @@ class UserModuleTest {
                 .andExpect(jsonPath("$.data.accountNumber").value(account.getAccountNumber()))
                 .andExpect(jsonPath("$.data.upiId").value("dashuser@obs"))
                 .andExpect(jsonPath("$.data.balance").exists())
-                .andExpect(jsonPath("$.data.totalIncome").value(0))
+                .andExpect(jsonPath("$.data.totalIncome").value(500))
                 .andExpect(jsonPath("$.data.totalExpense").value(0))
-                .andExpect(jsonPath("$.data.recentTransactions").isEmpty());
+                .andExpect(jsonPath("$.data.recentTransactions.length()").value(1));
     }
 
     @Test

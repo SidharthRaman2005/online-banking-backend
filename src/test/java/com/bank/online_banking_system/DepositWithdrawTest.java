@@ -42,7 +42,7 @@ class DepositWithdrawTest {
     private String tokenFor(String username, String email) throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"%s","email":"%s","password":"Secret123"}
+                                {"username":"%s","email":"%s","password":"Secret123","openingDeposit":500}
                                 """.formatted(username, email)))
                 .andExpect(status().isCreated());
 
@@ -91,7 +91,7 @@ class DepositWithdrawTest {
         mockMvc.perform(post("/api/transactions/withdraw").header("Authorization", token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"amount":2500.50}"""))
+                                {"amount":250.50}"""))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.data.type").value("WITHDRAW"))
                 .andExpect(jsonPath("$.data.direction").value("DEBIT"))
@@ -100,7 +100,7 @@ class DepositWithdrawTest {
                 .andExpect(jsonPath("$.data.receiverAccountNumber").doesNotExist());
 
         assertThat(balanceOf("withdrawer@obs"))
-                .isEqualByComparingTo(before.subtract(new BigDecimal("2500.50")));
+                .isEqualByComparingTo(before.subtract(new BigDecimal("250.50")));
     }
 
     @Test
@@ -155,9 +155,9 @@ class DepositWithdrawTest {
 
         mockMvc.perform(get("/api/user/dashboard").header("Authorization", token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalIncome").value(5000.00))
+                .andExpect(jsonPath("$.data.totalIncome").value(5500.00))
                 .andExpect(jsonPath("$.data.totalExpense").value(1200.00))
-                .andExpect(jsonPath("$.data.recentTransactions.length()").value(2))
+                .andExpect(jsonPath("$.data.recentTransactions.length()").value(3))
                 // Newest first.
                 .andExpect(jsonPath("$.data.recentTransactions[0].type").value("WITHDRAW"))
                 .andExpect(jsonPath("$.data.recentTransactions[1].type").value("DEPOSIT"));

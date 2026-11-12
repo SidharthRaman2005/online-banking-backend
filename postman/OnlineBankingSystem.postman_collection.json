@@ -33,7 +33,7 @@
                 "const d = pm.response.json().data;",
                 "pm.test('account number is 10 digits', () => pm.expect(d.accountNumber).to.match(/^[1-9]\\d{9}$/));",
                 "pm.test('upi id is issued', () => pm.expect(d.upiId).to.include('@obs'));",
-                "pm.test('opening balance is in range', () => { pm.expect(Number(d.balance)).to.be.at.least(100000); pm.expect(Number(d.balance)).to.be.at.most(9900000); });",
+                "pm.test('opening balance is 500', () => pm.expect(Number(d.balance)).to.equal(500));",
                 "pm.test('no password in response', () => pm.expect(pm.response.text()).to.not.include('password'));",
                 "pm.collectionVariables.set('email', d.email);",
                 "pm.collectionVariables.set('userId', d.userId);"
@@ -44,7 +44,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo{{runId}}\",\n  \"email\": \"demo{{runId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"demo{{runId}}\",\n  \"email\": \"demo{{runId}}@mail.com\",\n  \"password\": \"Secret123\",\n  \"openingDeposit\": 500\n}" }
           }
         },
         {
@@ -194,7 +194,7 @@
             "method": "POST",
             "header": [{ "key": "Content-Type", "value": "application/json" }],
             "url": "{{baseUrl}}/api/auth/register",
-            "body": { "mode": "raw", "raw": "{\n  \"username\": \"payee{{rxId}}\",\n  \"email\": \"payee{{rxId}}@mail.com\",\n  \"password\": \"Secret123\"\n}" }
+            "body": { "mode": "raw", "raw": "{\n  \"username\": \"payee{{rxId}}\",\n  \"email\": \"payee{{rxId}}@mail.com\",\n  \"password\": \"Secret123\",\n  \"openingDeposit\": 500\n}" }
           }
         },
         {

@@ -49,7 +49,7 @@ class AuthModuleTest {
 
     private String registerBody(String username, String email, String password) {
         return """
-                {"username":"%s","email":"%s","password":"%s"}
+                {"username":"%s","email":"%s","password":"%s","openingDeposit":500}
                 """.formatted(username, email, password);
     }
 
@@ -74,7 +74,7 @@ class AuthModuleTest {
 
         assertThat(data.get("accountNumber").asText()).matches("[1-9]\\d{9}");
         assertThat(new BigDecimal(data.get("balance").asText()))
-                .isBetween(new BigDecimal("100000"), new BigDecimal("9900000"));
+                .isEqualByComparingTo("500.00");
         assertThat(data.has("password")).isFalse();
     }
 

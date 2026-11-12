@@ -61,6 +61,7 @@ class TransferModuleTest {
     void transferByAccountNumberMovesMoneyBothWays() throws Exception {
         String sender = api.register("tsender", "tsender@mail.com");
         api.register("treceiver", "treceiver@mail.com");
+        api.deposit(sender, "5000");
 
         BigDecimal senderBefore = balanceOf("tsender@obs");
         BigDecimal receiverBefore = balanceOf("treceiver@obs");
@@ -87,6 +88,7 @@ class TransferModuleTest {
     void transferByUpiIdWorksThroughTheSameCodePath() throws Exception {
         String sender = api.register("upisender", "upisender@mail.com");
         api.register("upitaker", "upitaker@mail.com");
+        api.deposit(sender, "2000");
 
         BigDecimal receiverBefore = balanceOf("upitaker@obs");
 
@@ -106,6 +108,7 @@ class TransferModuleTest {
     void eachSideOfATransferSeesItsOwnBalanceAndDirection() throws Exception {
         String sender = api.register("ledgera", "ledgera@mail.com");
         String receiver = api.register("ledgerb", "ledgerb@mail.com");
+        api.deposit(sender, "1500");
 
         String body = transfer(sender, """
                 {"receiverUpiId":"ledgerb@obs","amount":1500.00}""");
@@ -220,6 +223,8 @@ class TransferModuleTest {
     void simultaneousMutualTransfersDoNotDeadlock() throws Exception {
         String a = api.register("mutuala", "mutuala@mail.com");
         String b = api.register("mutualb", "mutualb@mail.com");
+        api.deposit(a, "1000");
+        api.deposit(b, "700");
 
         BigDecimal totalBefore = balanceOf("mutuala@obs").add(balanceOf("mutualb@obs"));
 

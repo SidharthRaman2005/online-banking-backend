@@ -201,13 +201,14 @@ it from the user id (guessable).
 **UPI ID** — `sanitize(username) + "@" + app.upi.domain`. Sanitize = lowercase, strip everything
 outside `[a-z0-9._]`. If taken, append a 3-digit suffix (`sidharth1@obs`) and retry.
 
-**Initial balance** — uniform random in `[min, max]` from config, rounded to 2 decimals,
-`RoundingMode.HALF_UP`.
+**Opening deposit** — registration requires an `openingDeposit` of at least ₹500. The account is
+opened with a fixed ₹500 balance and one corresponding `DEPOSIT` ledger row; any amount above the
+minimum is accepted as the simulated payment input but does not increase the opening balance.
 
 **Transaction reference** — `"TXN" + 10 random digits`, unique-checked.
 
 **Critical invariants:**
-- Account number, UPI ID and balance are generated **once, at registration only**.
+- Account number, UPI ID and opening balance are created **once, at registration only**.
 - Login must not write to the database at all.
 - Changing the username does **not** change the UPI ID. The UPI ID is a permanent payment address;
   silently re-pointing it would break every payer who saved it. State this in the profile UI.

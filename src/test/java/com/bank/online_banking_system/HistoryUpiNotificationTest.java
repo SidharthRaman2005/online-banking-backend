@@ -44,14 +44,14 @@ class HistoryUpiNotificationTest {
                 .andExpect(jsonPath("$.data.content.length()").value(5))
                 .andExpect(jsonPath("$.data.page").value(0))
                 .andExpect(jsonPath("$.data.size").value(5))
-                .andExpect(jsonPath("$.data.totalElements").value(12))
+                .andExpect(jsonPath("$.data.totalElements").value(13))
                 .andExpect(jsonPath("$.data.totalPages").value(3))
                 .andExpect(jsonPath("$.data.last").value(false))
                 .andExpect(jsonPath("$.data.content[0].amount").value(1200.00));
 
         mockMvc.perform(get("/api/transactions?page=2&size=5").header("Authorization", token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.content.length()").value(2))
+                .andExpect(jsonPath("$.data.content.length()").value(3))
                 .andExpect(jsonPath("$.data.last").value(true));
     }
 
@@ -66,7 +66,7 @@ class HistoryUpiNotificationTest {
 
         mockMvc.perform(get("/api/transactions?type=DEPOSIT").header("Authorization", token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalElements").value(1))
+                .andExpect(jsonPath("$.data.totalElements").value(2))
                 .andExpect(jsonPath("$.data.content[0].type").value("DEPOSIT"));
 
         mockMvc.perform(get("/api/transactions?type=WITHDRAW").header("Authorization", token))
@@ -86,7 +86,7 @@ class HistoryUpiNotificationTest {
         mockMvc.perform(get("/api/transactions?from=" + today + "&to=" + today)
                         .header("Authorization", token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.totalElements").value(2));
+                .andExpect(jsonPath("$.data.totalElements").value(3));
 
         mockMvc.perform(get("/api/transactions?type=NONSENSE").header("Authorization", token))
                 .andExpect(status().isBadRequest())

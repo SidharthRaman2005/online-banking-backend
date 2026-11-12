@@ -237,3 +237,11 @@ same applies to any `-D` flag whose value or name contains a hyphen, such as
 
 **Login returns 403 instead of 401** — expected for a *deactivated* account (`ACCOUNT_DEACTIVATED`).
 An admin can reactivate it from the Users screen.
+
+
+
+cd "D:\SAA2 PROJECT\backend"
+mvn spring-boot:run "-Dspring-boot.run.profiles=local" "-Dspring-boot.run.arguments=--server.port=8081"
+
+cd "D:\SAA2 PROJECT\frontend"
+npm run dev

@@ -22,7 +22,7 @@ public class TestApiClient {
     public String register(String username, String email) throws Exception {
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"username":"%s","email":"%s","password":"Secret123"}
+                                {"username":"%s","email":"%s","password":"Secret123","openingDeposit":500}
                                 """.formatted(username, email)))
                 .andExpect(status().isCreated());
         return login(email, "Secret123");

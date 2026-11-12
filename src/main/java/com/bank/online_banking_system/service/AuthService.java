@@ -10,6 +10,7 @@ import com.bank.online_banking_system.entity.BankAccount;
 import com.bank.online_banking_system.entity.User;
 import com.bank.online_banking_system.enums.AccountStatus;
 import com.bank.online_banking_system.enums.Role;
+import com.bank.online_banking_system.enums.TransactionType;
 import com.bank.online_banking_system.exception.AccountDeactivatedException;
 import com.bank.online_banking_system.exception.DuplicateResourceException;
 import com.bank.online_banking_system.exception.InvalidCredentialsException;
@@ -17,13 +18,15 @@ import com.bank.online_banking_system.repository.BankAccountRepository;
 import com.bank.online_banking_system.repository.UserRepository;
 import com.bank.online_banking_system.security.JwtService;
 import com.bank.online_banking_system.util.AccountNumberGenerator;
-import com.bank.online_banking_system.util.InitialBalanceGenerator;
+import com.bank.online_banking_system.util.ReferenceGenerator;
 import com.bank.online_banking_system.util.UpiIdGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
 
 @Slf4j
 @Service
@@ -36,7 +39,10 @@ public class AuthService {
     private final JwtService jwtService;
     private final AccountNumberGenerator accountNumberGenerator;
     private final UpiIdGenerator upiIdGenerator;
-    private final InitialBalanceGenerator initialBalanceGenerator;
+    private final TransactionService transactionService;
+    private final ReferenceGenerator referenceGenerator;
+
+    private static final BigDecimal OPENING_BALANCE = new BigDecimal("500.00");
 
     /**
      * Creates the user and their bank account in one database transaction, so a failure part-way
@@ -66,11 +72,13 @@ public class AuthService {
         BankAccount account = BankAccount.builder()
                 .accountNumber(accountNumberGenerator.generate())
                 .upiId(upiIdGenerator.generate(username))
-                .balance(initialBalanceGenerator.generate())
+                .balance(OPENING_BALANCE)
                 .status(AccountStatus.ACTIVE)
                 .user(user)
                 .build();
         account = bankAccountRepository.save(account);
+        transactionService.record(account, TransactionType.DEPOSIT, OPENING_BALANCE,
+                null, account.getAccountNumber(), "Opening deposit", referenceGenerator.generate());
 
         log.info("Registered user id={} with account {}", user.getId(), account.getAccountNumber());
         return RegisterResponse.from(account);

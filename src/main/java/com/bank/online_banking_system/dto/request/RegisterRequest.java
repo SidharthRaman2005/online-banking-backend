@@ -1,11 +1,16 @@
 package com.bank.online_banking_system.dto.request;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Digits;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
+
+import java.math.BigDecimal;
 
 @Getter
 @Setter
@@ -27,4 +32,9 @@ public class RegisterRequest {
     @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$",
             message = "Password must contain at least one letter and one digit")
     private String password;
+
+    @NotNull(message = "Opening deposit is required")
+    @DecimalMin(value = "500.00", message = "Opening deposit must be at least ₹500")
+    @Digits(integer = 17, fraction = 2, message = "Opening deposit may have at most 2 decimal places")
+    private BigDecimal openingDeposit;
 }
